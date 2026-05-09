@@ -60,8 +60,9 @@ const getTokensFromNotion = async (notion, databaseId, symbolPropertyName) => {
     return id;
   }).filter(Boolean);
 
-  console.log('Final tokens list:', tokens);
-  return tokens;
+  const uniqueTokens = [...new Set(tokens)];
+  console.log('Final tokens list:', uniqueTokens);
+  return uniqueTokens;
 };
 
 // Function to update a single database
@@ -94,9 +95,12 @@ const updateDatabase = async (config) => {
         },
       });
 
-      const page = response.results[0];
+      if (response.results.length === 0) {
+        console.log(`No page found for ${symbol} in database ${config.id}`);
+        continue;
+      }
 
-      if (page) {
+      for (const page of response.results) {
         await notion.pages.update({
           page_id: page.id,
           properties: {
@@ -108,10 +112,8 @@ const updateDatabase = async (config) => {
             },
           },
         });
-        console.log(`Updated prices for ${symbol} in database ${config.id}`);
-      } else {
-        console.log(`No page found for ${symbol} in database ${config.id}`);
       }
+      console.log(`Updated ${response.results.length} row(s) for ${symbol} in database ${config.id}`);
     }
   } catch (error) {
     console.error(`Error updating database ${config.id}:`, error);
